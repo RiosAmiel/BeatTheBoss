@@ -55,4 +55,65 @@ export class AppComponent implements AfterViewInit{
     this.seconds.nativeElement.innerText = 60 - this.date.getSeconds();
   }
   title = 'BeatTheBoss';
+
+  holding = [];
+  moves:any;
+  rating = 3
+  diskNum = 7;
+  minMoves = 127;
+  canves:any = ('#canves');
+  restart = this.canves.find('.restart');
+  tower = this.canves.find('.tower');
+  scorePanel = this.canves.find('#score-panel');
+  movesCount = this.scorePanel.find('#moves-num');
+  ratingStars = this.scorePanel.find('i');
+
+
+  
+  setRating = (moves: number) => {
+    if (moves === 127) {
+			this.ratingStars.eq(2).removeClass('fa-star').addClass('fa-star-o');
+			this.rating = 2;
+		} else if (moves >= 128 && moves <= 228) {
+			this.ratingStars.eq(1).removeClass('fa-star').addClass('fa-star-o');
+			this.rating = 1;
+		} else if (moves >= 229) {
+			this.ratingStars.eq(0).removeClass('fa-star').addClass('fa-star-o');
+			this.rating = 0;
+		}	
+		return { score: this.rating };
+  }
+  initGame = () => {
+    this.tower.html('');
+    this.moves = 0;
+    this.movesCount.html(0);
+    this.holding = [];
+    for ( var i = 1; i <= this.diskNum; i++){
+      this.tower.prepend('<li class="disk disk-' + i + '" data-value="' + i + '"></li>');
+    }
+  }
+
+  countMove = () => {
+    this.moves++;
+    this.movesCount.html(this.moves);
+    if (this.moves > this.minMoves - 1) {
+			if (this.tower.eq(1).children().length === this.diskNum || this.tower.eq(2).children().length === this.diskNum) {
+				Swal.fire({
+					allowEscapeKey: false,
+					allowOutsideClick: false,
+					title: 'Congratulations! You Won!',
+					text: "Boom Shaka Lak",
+					type: 'success',
+					confirmButtonColor: '#8bc34a',
+					confirmButtonText: 'Play again!'
+				}).then(function(isConfirm: any) {
+					if (isConfirm) {
+						initGame(.eq(0));
+					}
+				})
+			}
+		}
+		
+		setRating(this.moves);
+  }
 }
