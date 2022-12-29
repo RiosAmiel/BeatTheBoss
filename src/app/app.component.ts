@@ -1,11 +1,13 @@
-import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, HostListener } from '@angular/core';
+import { Cell, Maze, keyboardMap } from '../models';
+import Swal from 'sweetalert2'; 
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements AfterViewInit{
+export class AppComponent implements OnInit, AfterViewInit{
   date: any;
   now: any;
   targetDate: any = new Date(2022, 12, 9);
@@ -56,64 +58,110 @@ export class AppComponent implements AfterViewInit{
   }
   title = 'BeatTheBoss';
 
-  holding = [];
-  moves:any;
-  rating = 3
-  diskNum = 7;
-  minMoves = 127;
-  canves:any = ('#canves');
-  restart = this.canves.find('.restart');
-  tower = this.canves.find('.tower');
-  scorePanel = this.canves.find('#score-panel');
-  movesCount = this.scorePanel.find('#moves-num');
-  ratingStars = this.scorePanel.find('i');
+  //Main Game
 
+  row = 15;
+  col = 15;
+  cellSize = 20; // cell size
+  private maze: Maze;
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
+  private gameOver = false;
+  private myPath: Cell[] = [];
+  private currentCell: Cell;
 
-  
-  setRating = (moves: number) => {
-    if (moves === 127) {
-			this.ratingStars.eq(2).removeClass('fa-star').addClass('fa-star-o');
-			this.rating = 2;
-		} else if (moves >= 128 && moves <= 228) {
-			this.ratingStars.eq(1).removeClass('fa-star').addClass('fa-star-o');
-			this.rating = 1;
-		} else if (moves >= 229) {
-			this.ratingStars.eq(0).removeClass('fa-star').addClass('fa-star-o');
-			this.rating = 0;
-		}	
-		return { score: this.rating };
+  ngOnInit() {}
+
+  ngAfterViewInit() {
+    this.canvas = <HTMLCanvasElement>document.getElementById('maze');
+    this.ctx = this.canvas.getContext('2d');
+    this.drawMaze();
   }
-  initGame = () => {
-    this.tower.html('');
-    this.moves = 0;
-    this.movesCount.html(0);
-    this.holding = [];
-    for ( var i = 1; i <= this.diskNum; i++){
-      this.tower.prepend('<li class="disk disk-' + i + '" data-value="' + i + '"></li>');
+
+  drawMaze() {
+    this.maze = new Maze(this.row, this.col, this.cellSize, this.ctx);
+    this.canvas.width = this.col * this.cellSize;
+    this.canvas.height = this.row * this.cellSize;
+    this.maze.draw();
+    this.initPlay();
+  }
+
+  initPlay(lineThickness = 10, color = '#4080ff') {
+    this.gameOver = false;
+    this.myPath.length = 0;
+    this.ctx.lineWidth = lineThickness;
+    this.ctx.strokeStyle = color;
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, this.cellSize / 2);
+    this.ctx.lineTo(this.cellSize / 2, this.cellSize / 2);
+    this.ctx.stroke();
+    this.currentCell = this.maze.cells[0][0];
+    this.myPath.push(this.currentCell);
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if (this.gameOver) return;
+    const direction = keyboardMap[event.key];
+    if (direction) this.move(direction);
+  }
+
+  move(direction: 'Left' | 'Right' | 'Up' | 'Down') {
+    let nextCell: Cell;
+    if (direction === 'Left') {
+      if (this.currentCell.col < 1) return;
+      nextCell = this.maze.cells[this.currentCell.row][
+        this.currentCell.col - 1
+      ];
+    }
+    if (direction === 'Right') {
+      if (this.currentCell.col + 1 >= this.col) return;
+      nextCell = this.maze.cells[this.currentCell.row][
+        this.currentCell.col + 1
+      ];
+    }
+    if (direction === 'Up') {
+      if (this.currentCell.row < 1) return;
+      nextCell = this.maze.cells[this.currentCell.row - 1][
+        this.currentCell.col
+      ];
+    }
+    if (direction === 'Down') {
+      if (this.currentCell.row + 1 >= this.row) return;
+      nextCell = this.maze.cells[this.currentCell.row + 1][
+        this.currentCell.col
+      ];
+    }
+    if (this.currentCell.hasConnectionWith(nextCell)) {
+      if (
+        this.myPath.length > 1 &&
+        this.myPath[this.myPath.length - 2].equals(nextCell)
+      ) {
+        this.maze.erasePath(this.myPath);
+        this.myPath.pop();
+      } else {
+        this.myPath.push(nextCell);
+        if (nextCell.equals(new Cell(this.row - 1, this.col - 1))) {
+          this.hooray();
+          this.gameOver = true;
+          this.maze.drawSolution('#4080ff');
+          return;
+        }
+      }
+
+      this.maze.drawPath(this.myPath);
+      this.currentCell = nextCell;
     }
   }
 
-  countMove = () => {
-    this.moves++;
-    this.movesCount.html(this.moves);
-    if (this.moves > this.minMoves - 1) {
-			if (this.tower.eq(1).children().length === this.diskNum || this.tower.eq(2).children().length === this.diskNum) {
-				Swal.fire({
-					allowEscapeKey: false,
-					allowOutsideClick: false,
-					title: 'Congratulations! You Won!',
-					text: "Boom Shaka Lak",
-					type: 'success',
-					confirmButtonColor: '#8bc34a',
-					confirmButtonText: 'Play again!'
-				}).then(function(isConfirm: any) {
-					if (isConfirm) {
-						initGame(.eq(0));
-					}
-				})
-			}
-		}
-		
-		setRating(this.moves);
+  solution() {
+    this.gameOver = true;
+    this.maze.drawSolution('#ff7575', 3);
+  }
+
+  private hooray() {
+    var audio = new Audio('assets/KidsCheering.mp3');
+    audio.play();
   }
 }
+
