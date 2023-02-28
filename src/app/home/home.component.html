@@ -1,0 +1,35 @@
+<div class="count-down-timer"> <p>Countdown to {{ currentTime }}</p> <div class="wrapper"> <div class="description"> <p>Days</p> <p>Hours</p> <p>Minutes</p> <p>Seconds</p> </div> <div class="times"> <p #days></p> <p #hours></p> <p #minutes></p> <p #seconds></p> </div> </div> </div>
+
+  <div class="main-content">
+    <div class="image-main-container">
+        <div class="image-container1">
+            <img src="../../assets/images/coor1.png" alt="" class="images">
+            <img src="../../assets/images/coor2.jpg" alt="" class="images">
+        </div>
+        <div class="image-container2">
+            <img src="../../assets/images/coor3.jpg" alt="" class="images">
+            <img src="../../assets/images/coor4.jpg" alt="" class="images">
+        </div>
+    </div>
+    <div class="answer-container">
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+        <input type="text" class="input-box" readonly>
+    </div>
+    
+    <div class="letters-container">
+        <div>
+            <button *ngFor = "let label of label1; let i = index"
+            [ngClass]="{ 'indent': i == 8 }">{{label}}</button>
+        </div>
+    </div>
+  </div>
